@@ -1,92 +1,91 @@
+import matplotlib.pyplot as plt
 
-# Social Media Usage Time Profiler
-# SAMPLE DATA (You can also take input from user)
-apps = ["Instagram", "YouTube", "Snapchat", "WhatsApp", "Facebook"]
-daily_usage = [
-    [120, 150, 90, 80, 60, 100, 110],   # Instagram (7 days)
-    [200, 180, 220, 240, 210, 250, 260], # YouTube
-    [80, 60, 75, 90, 85, 70, 65],        # Snapchat
-    [50, 55, 45, 40, 60, 50, 55],        # WhatsApp
-    [30, 20, 25, 40, 35, 30, 50]         # Facebook
-]
+def get_input():
+    apps = []
+    daily_usage = []
+    peak_hours = []
 
-peak_hours = [10, 14, 12, 9, 20]  # Peak usage hour for each app
+    n = int(input("Enter number of social media apps: "))
+
+    print("\nEnter app names:")
+    for _ in range(n):
+        apps.append(input().strip())
+
+    print("\nEnter daily usage (7 days) for each app:")
+    for app in apps:
+        print(f"Enter 7 daily usage values (minutes) for {app}:")
+        week = list(map(int, input().split()))
+        daily_usage.append(week)
+
+    print("\nEnter peak usage hour (0–23) for each app:")
+    for app in apps:
+        print(f"Peak hour for {app}:")
+        peak_hours.append(int(input()))
+
+    return apps, daily_usage, peak_hours
 
 
-# FUNCTION 1: Weekly total usage per app
-def weekly_usage(data):
-    totals = []
-    for app_data in data:
-        total = sum(app_data)
-        totals.append(total)
-    return totals
+def calculate_totals(daily_usage):
+    return [sum(week) for week in daily_usage]
 
-# FUNCTION 2: Find the most used (distracting) app
-def most_distracting(apps, totals):
-    max_usage = max(totals)
-    index = totals.index(max_usage)
-    return apps[index], max_usage
 
-# FUNCTION 3: Detect addiction patterns
-# Conditions for addiction:
-# - App used more than 150 minutes DAILY avg
-# - Usage increasing for 3 consecutive days
-def addiction_patterns(apps, data):
-    addiction_list = []
+def find_most_distracting_app(apps, totals):
+    max_value = max(totals)
+    index = totals.index(max_value)
+    return apps[index], max_value
 
-    for i in range(len(apps)):
-        weekly_data = data[i]
-        avg = sum(weekly_data) / 7
 
-        # Check increasing pattern
-        increasing_streak = False
-        for j in range(4):  # Check 0-1-2, 1-2-3, 2-3-4, 3-4-5
-            if weekly_data[j] < weekly_data[j+1] < weekly_data[j+2]:
-                increasing_streak = True
+def detect_addiction(daily_usage):
+    addictive_apps = []
+    for i, week in enumerate(daily_usage):
+        avg = sum(week) / 7
+        if avg > 150:  # condition 1: average more than 150 min/day
+            addictive_apps.append(i)
 
-        if avg > 150 or increasing_streak:
-            addiction_list.append(apps[i])
+        # condition 2: strictly increasing usage throughout the week
+        increasing = all(week[j] < week[j+1] for j in range(6))
+        if increasing:
+            addictive_apps.append(i)
 
-    return addiction_list
+    return list(set(addictive_apps))
 
-# FUNCTION 4: ASCII WEEKLY GRAPH
 
-def show_weekly_graph(apps, totals):
-    print("\n===== WEEKLY SCREEN TIME GRAPH =====")
-    for i in range(len(apps)):
-        bars = totals[i] // 20  # scale down
-        print(f"{apps[i]:12} | " + "█" * bars + f" ({totals[i]} min)")
+def plot_graph(apps, totals):
+    plt.figure(figsize=(10, 6))
+    plt.bar(apps, totals)
+    plt.xlabel("Apps")
+    plt.ylabel("Total Weekly Usage (minutes)")
+    plt.title("Weekly Social Media Screen-Time")
+    plt.show()
 
-# MAIN PROGRAM
 
-totals = weekly_usage(daily_usage)
+def main():
+    apps, daily_usage, peak_hours = get_input()
 
-print("\n====== SOCIAL MEDIA USAGE PROFILER ======\n")
+    totals = calculate_totals(daily_usage)
 
-# Show total usage per app
-print("Weekly Total Screen Time:")
-for i in range(len(apps)):
-    print(f"{apps[i]:12} : {totals[i]} minutes")
+    # Print weekly totals
+    print("\n--- Weekly Usage Summary ---")
+    for app, total in zip(apps, totals):
+        print(f"{app}: {total} minutes")
 
-# Most distracting app
-name, time = most_distracting(apps, totals)
-print(f"\nMost Distracting App: {name} ({time} minutes/week)")
+    # Most distracting app
+    distracting_app, max_usage = find_most_distracting_app(apps, totals)
+    print(f"\nMost Distracting App: {distracting_app} ({max_usage} minutes)")
 
-# Addiction patterns
-patterns = addiction_patterns(apps, daily_usage)
-print("\nApps Showing Addiction Patterns:")
-if len(patterns) == 0:
-    print("No addiction patterns detected.")
-else:
-    for p in patterns:
-        print("- " + p)
+    # Addiction detection
+    addictive_indices = detect_addiction(daily_usage)
+    if addictive_indices:
+        print("\nAddiction Detected for:")
+        for index in addictive_indices:
+            print("-", apps[index])
+    else:
+        print("\nNo Addiction Detected.")
 
-# Peak hours
-print("\nPeak Usage Hours:")
-for i in range(len(apps)):
-    print(f"{apps[i]:12} : {peak_hours[i]}:00")
+    # Weekly usage graph
+    print("\nGenerating Weekly Screen-Time Graph...")
+    plot_graph(apps, totals)
 
-# Display graph
-show_weekly_graph(apps, totals)
 
-print("\nAnalysis Completed.")
+if __name__ == "__main__":
+    main()
